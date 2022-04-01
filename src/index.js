@@ -48,7 +48,10 @@ class Game extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            history: [ Array(9).fill(null) ],
+            history: [{
+                squares: Array(9).fill(null),
+                pos: Array(2).fill(null)
+            }],
             moveIndex: 0,
             xIsNext: true,
         };
@@ -56,16 +59,23 @@ class Game extends React.Component {
 
     handleClick(i) {
         const history = this.state.history.slice(0, this.state.moveIndex + 1);
-        const current = [...history[history.length - 1]];
+        const squares = history[history.length - 1].squares.slice();
 
-        if (calculateWinner(current) || current[i])
+        if (calculateWinner(squares) || squares[i])
             return;
-        current[i] = this.state.xIsNext ? 'X' : 'O';
+        squares[i] = this.state.xIsNext ? 'X' : 'O';
 
+        const n = Math.sqrt(squares.length);
         this.setState({
             // React는 push() 함수보다 concat() 함수를 권장한다.
             // concat() 함수가 기존 배열을 변경하지 않기 때문이라고 한다.
-            history: history.concat([current]),
+            history: history.concat([{
+                squares,
+                pos: [
+                    Math.ceil((i + 1) / n),
+                    (i + 1) % n ? (i + 1) % n : n
+                ]
+            }]),
             moveIndex: history.length,
             xIsNext: !this.state.xIsNext
         });
@@ -80,18 +90,18 @@ class Game extends React.Component {
 
     render() {
         const history = this.state.history;
-        const current = history[this.state.moveIndex];
-        const winner = calculateWinner(current);
+        const {squares} = history[this.state.moveIndex];
+        const winner = calculateWinner(squares);
         const status = winner ?
             `Winner: ${winner}` :
             `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
 
-        const moves = history.map((h, i) => {
+        const moves = history.map((step, i) => {
             return (
                 // 배열의 index를 key로 사용해도 안전하다. 배열의 순서가 바뀔 일이 없기 때문이다.
                 <li key={i}>
                     <button onClick={() => this.moveTo(i)}>
-                        Go to {`${i ? `Move #${i}` : 'start'}`}
+                        Go to {`${i ? `Move #${i} (${step.pos.join(', ')})` : 'start'}`}
                     </button>
                 </li>);
         });
@@ -100,7 +110,7 @@ class Game extends React.Component {
             <div className="game">
                 <div className="game-board">
                     <Board
-                        squares={current}
+                        squares={squares}
                         xIsNext={this.state.xIsNext}
                         onClick={(i) => this.handleClick(i)}
                     />
