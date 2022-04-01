@@ -13,43 +13,17 @@ function Square(props) {
 }
 
 class Board extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = {
-            squares: Array(9).fill(null),
-            xIsNext: true
-        };
-    }
-
     renderSquare(i) {
         return (
             <Square
-                value={this.state.squares[i]}
-                onClick={() => this.handleClick(i)}
+                value={this.props.squares[i]}
+                onClick={() => this.props.onClick(i)}
             />);
     }
 
-    handleClick(i) {
-        const squares = [...this.state.squares];
-        if (calculateWinner(squares) || squares[i])
-            return;
-
-        squares[i] = this.state.xIsNext ? 'X' : 'O';
-        this.setState((prevState) => ({
-            squares,
-            xIsNext: !prevState.xIsNext
-        }));
-    }
-
     render() {
-        const winner = calculateWinner(this.state.squares);
-        const status = winner ?
-            `Winner: ${winner}` :
-            `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
-
         return (
             <div>
-                <div className="status">{status}</div>
                 <div className="board-row">
                     {this.renderSquare(0)}
                     {this.renderSquare(1)}
@@ -71,15 +45,69 @@ class Board extends React.Component {
 }
 
 class Game extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = {
+            history: [ Array(9).fill(null) ],
+            moveIndex: 0,
+            xIsNext: true,
+        };
+    }
+
+    handleClick(i) {
+        const history = this.state.history.slice(0, this.state.moveIndex + 1);
+        const current = [...history[history.length - 1]];
+
+        if (calculateWinner(current) || current[i])
+            return;
+        current[i] = this.state.xIsNext ? 'X' : 'O';
+
+        this.setState({
+            // React는 push() 함수보다 concat() 함수를 권장한다.
+            // concat() 함수가 기존 배열을 변경하지 않기 때문이라고 한다.
+            history: history.concat([current]),
+            moveIndex: history.length,
+            xIsNext: !this.state.xIsNext
+        });
+    }
+
+    moveTo(moveIndex) {
+        this.setState({
+            moveIndex,
+            xIsNext: !(moveIndex % 2)
+        });
+    }
+
     render() {
+        const history = this.state.history;
+        const current = history[this.state.moveIndex];
+        const winner = calculateWinner(current);
+        const status = winner ?
+            `Winner: ${winner}` :
+            `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
+
+        const moves = history.map((h, i) => {
+            return (
+                // 배열의 index를 key로 사용해도 안전하다. 배열의 순서가 바뀔 일이 없기 때문이다.
+                <li key={i}>
+                    <button onClick={() => this.moveTo(i)}>
+                        Go to {`${i ? `Move #${i}` : 'start'}`}
+                    </button>
+                </li>);
+        });
+
         return (
             <div className="game">
                 <div className="game-board">
-                    <Board />
+                    <Board
+                        squares={current}
+                        xIsNext={this.state.xIsNext}
+                        onClick={(i) => this.handleClick(i)}
+                    />
                 </div>
                 <div className="game-info">
-                    <div>{/* status */}</div>
-                    <ol>{/* TODO */}</ol>
+                    <div>{status}</div>
+                    <ol>{moves}</ol>
                 </div>
             </div>
         );
