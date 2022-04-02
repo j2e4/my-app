@@ -12,36 +12,27 @@ function Square(props) {
         </button>);
 }
 
-class Board extends React.Component {
-    renderSquare(i) {
-        return (
-            <Square
-                value={this.props.squares[i]}
-                onClick={() => this.props.onClick(i)}
-            />);
-    }
+function Board(props) {
+    const n = Math.sqrt(props.squares.length);
 
-    render() {
-        return (
-            <div>
-                <div className="board-row">
-                    {this.renderSquare(0)}
-                    {this.renderSquare(1)}
-                    {this.renderSquare(2)}
-                </div>
-                <div className="board-row">
-                    {this.renderSquare(3)}
-                    {this.renderSquare(4)}
-                    {this.renderSquare(5)}
-                </div>
-                <div className="board-row">
-                    {this.renderSquare(6)}
-                    {this.renderSquare(7)}
-                    {this.renderSquare(8)}
-                </div>
-            </div>
-        );
-    }
+    return <div>
+        {
+            Array(n).fill(null).map((_, i) => {
+                const startIndex = n * i;
+                const squares = props.squares.slice(startIndex, n * (i + 1));
+                return (
+                    <div key={i} className="board-row">
+                        {squares.map((square, j) => (
+                            <Square
+                                key={startIndex + j}
+                                value={square}
+                                onClick={() => props.onClick(startIndex + j)}
+                            />
+                        ))}
+                    </div>);
+            })
+        }
+    </div>;
 }
 
 class Game extends React.Component {
@@ -54,6 +45,7 @@ class Game extends React.Component {
             }],
             moveIndex: 0,
             xIsNext: true,
+            ascOrder: true
         };
     }
 
@@ -81,6 +73,12 @@ class Game extends React.Component {
         });
     }
 
+    handleSortOrder() {
+        this.setState({
+            ascOrder: !this.state.ascOrder
+        });
+    }
+
     moveTo(moveIndex) {
         this.setState({
             moveIndex,
@@ -100,11 +98,16 @@ class Game extends React.Component {
             return (
                 // 배열의 index를 key로 사용해도 안전하다. 배열의 순서가 바뀔 일이 없기 때문이다.
                 <li key={i}>
-                    <button onClick={() => this.moveTo(i)}>
+                    <button
+                        style={{ fontWeight: this.state.moveIndex === i ? 'bold' : null }}
+                        onClick={() => this.moveTo(i)}
+                    >
                         Go to {`${i ? `Move #${i} (${step.pos.join(', ')})` : 'start'}`}
                     </button>
                 </li>);
         });
+        if (! this.state.ascOrder)
+            moves.reverse();
 
         return (
             <div className="game">
@@ -117,6 +120,9 @@ class Game extends React.Component {
                 </div>
                 <div className="game-info">
                     <div>{status}</div>
+                    <button onClick={() => this.handleSortOrder()}>
+                        Sort in {this.state.ascOrder ? 'Descending' : 'Ascending'} Order
+                    </button>
                     <ol>{moves}</ol>
                 </div>
             </div>
