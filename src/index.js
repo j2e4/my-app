@@ -96,9 +96,13 @@ class Game extends React.Component {
     render() {
         const history = this.state.history;
         const {squares, drawnLine} = history[this.state.moveIndex];
-        const status = drawnLine ?
-            `Winner: ${squares[drawnLine[0]]}` :
-            `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
+        let status; // 이 방법 밖에 없을까?
+        if (drawnLine)
+            status = `Winner: ${squares[drawnLine[0]]}`;
+        else if (this.state.moveIndex === squares.length)
+            status = `Everyone is a winner!`;
+        else
+            status = `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
 
         const moves = history.map((step, i) => {
             return (
